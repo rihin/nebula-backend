@@ -2,9 +2,11 @@ let socket = null;
 let token = null;
 let roomName = "";
 
-const SERVER = "https://your-app-name.onrender.com"; 
-// change to Render URL later
+const SERVER = "https://nebula-backend-6co0.onrender.com";
 
+/* =====================
+   LOGIN
+===================== */
 function login() {
   const username = document.getElementById("username").value.trim();
   const room = document.getElementById("room").value.trim();
@@ -20,44 +22,91 @@ function login() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username })
   })
-  .then(res => res.json())
-  .then(data => {
-    if (!data.token) {
-      error.innerText = "Login failed";
-      return;
-    }
+    .then(res => res.json())
+    .then(data => {
+      if (!data.token) {
+        error.innerText = "Login failed";
+        return;
+      }
 
-    token = data.token;
-    roomName = room;
-    connectWebSocket();
-  })
-  .catch(() => {
-    error.innerText = "Server unreachable";
-  });
+      token = data.token;
+      roomName = room;
+      connectWebSocket();
+    })
+    .catch(() => {
+      error.innerText = "Server unreachable";
+    });
 }
 
+/* =====================
+   WEBSOCKET
+===================== */
 function connectWebSocket() {
   document.getElementById("login").hidden = true;
   document.getElementById("chat").hidden = false;
   document.getElementById("room-title").innerText = `Room: ${roomName}`;
 
-  const wsUrl = SERVER.replace("http", "ws") + `/ws/${roomName}?token=${token}`;
-  socket = new WebSocket(wsUrl);
+  const wsUrl =
+    SERVER.startsWith("https")
+      ? SERVER.replace("https", "wss")
+      : SERVER.replace("http", "ws");
+
+  socket = new WebSocket(`${wsUrl}/ws/${roomName}?token=${token}`);
+
+  socket.onopen = () => {
+    console.log("WebSocket connected");
+  };
 
   socket.onmessage = (event) => {
+    const data = event.data;
+
+    /* 🔥 PRESENCE UPDATE */
+    if (data.startsWith("__PRESENCE__:")) {
+      const users = data.replace("__PRESENCE__:", "").split(",");
+      const list = document.getElementById("users");
+      list.innerHTML = "";
+
+      users.filter(Boolean).forEach(user => {
+        const li = document.createElement("li");
+        li.innerText = user;
+        list.appendChild(li);
+      });
+      return;
+    }
+
+    /* 💬 CHAT MESSAGE */
     const messages = document.getElementById("messages");
-    messages.innerHTML += `<div>${event.data}</div>`;
+    messages.innerHTML += `<div>${data}</div>`;
     messages.scrollTop = messages.scrollHeight;
   };
 
+  socket.onerror = () => {
+    console.error("WebSocket error");
+  };
+
   socket.onclose = () => {
-    alert("Disconnected from server");
+    console.warn("WebSocket disconnected");
   };
 }
 
+/* =====================
+   SEND MESSAGE
+===================== */
 function sendMessage() {
   const input = document.getElementById("message");
-  if (!input.value) return;
-  socket.send(input.value);
+  const text = input.value.trim();
+
+  if (!text || !socket || socket.readyState !== WebSocket.OPEN) return;
+
+  socket.send(text);
   input.value = "";
 }
+
+/* =====================
+   ENTER KEY SUPPORT
+===================== */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    sendMessage();
+  }
+});

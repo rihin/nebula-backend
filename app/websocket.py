@@ -3,6 +3,9 @@ from app.auth.jwt import verify_token
 from app.database import SessionLocal
 from app.history.service import save_message, get_recent_messages
 
+def get_users(room: str):
+    return list(rooms.get(room, {}).keys())
+
 chat_router = APIRouter()
 rooms: dict[str, dict[str, WebSocket]] = {}
 
@@ -21,9 +24,14 @@ async def chat(ws: WebSocket, room: str):
     await ws.accept()
     rooms[room][username] = ws
 
-    print(f"[JOIN] {username} -> {room}")
+    # 🔥 SEND UPDATED USER LIST
+    users = get_users(room)
+    for client in rooms[room].values():
+        await client.send_text(
+            f"__PRESENCE__:{','.join(users)}"
+        )
 
-    # 📜 SEND MESSAGE HISTORY
+    # 📜 send history (already present)
     db = SessionLocal()
     history = get_recent_messages(db, room)
     for msg in history:
@@ -35,11 +43,9 @@ async def chat(ws: WebSocket, room: str):
         while True:
             message = await ws.receive_text()
 
-            # 💾 SAVE MESSAGE
             save_message(db, room, username, message)
 
-            # 📢 BROADCAST TO ROOM
-            for user, client in rooms[room].items():
+            for client in rooms[room].values():
                 if client != ws:
                     await client.send_text(
                         f"[{room}] {username}: {message}"
@@ -47,7 +53,13 @@ async def chat(ws: WebSocket, room: str):
 
     except WebSocketDisconnect:
         rooms[room].pop(username, None)
-        print(f"[LEAVE] {username} <- {room}")
+
+        # 🔥 UPDATE PRESENCE ON LEAVE
+        users = get_users(room)
+        for client in rooms[room].values():
+            await client.send_text(
+                f"__PRESENCE__:{','.join(users)}"
+            )
 
         if not rooms[room]:
             rooms.pop(room)
