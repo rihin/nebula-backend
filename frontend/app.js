@@ -102,6 +102,42 @@ function sendMessage() {
   input.value = "";
 }
 
+
+
+async function register() {
+  const u = username.value;
+  const p = password.value;
+
+  const res = await fetch(`${SERVER}/auth/register?username=${u}&password=${p}`, {
+    method: "POST"
+  });
+
+  if (!res.ok) {
+    error.innerText = "Registration failed";
+    return;
+  }
+
+  error.innerText = "Registered. Now login.";
+}
+
+async function login() {
+  const u = username.value;
+  const p = password.value;
+
+  const res = await fetch(`${SERVER}/auth/login?username=${u}&password=${p}`, {
+    method: "POST"
+  });
+
+  if (!res.ok) {
+    error.innerText = "Login failed";
+    return;
+  }
+
+  const data = await res.json();
+  token = data.token;
+  connectWS();
+}
+
 /* =====================
    ENTER KEY SUPPORT
 ===================== */
