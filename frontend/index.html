@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nebula Chat 🌌</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="login">
+    <h2>🌌 Nebula Chat</h2>
+    <input id="username" placeholder="Username" />
+    <input id="room" placeholder="Room (general / tech / random)" />
+    <button onclick="login()">Join</button>
+    <p id="error"></p>
+  </div>
+
+  <div id="chat" hidden>
+    <h3 id="room-title"></h3>
+    <div id="messages"></div>
+    <input id="message" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
