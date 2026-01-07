@@ -13,7 +13,10 @@ async def chat():
         # 🔐 LOGIN
         res = requests.post(
             f"{SERVER}/auth/login",
-            json={"username": username},
+            json={
+                "username": username,
+                "password": input("Password: ")
+            },
             timeout=5
         )
 
