@@ -1,0 +1,13 @@
+sqlalchemy
+asyncpg
+python-jose
+passlib[bcrypt]
+pydantic
+python-dotenv
+textual
+httpx
+websockets
+rich
+fastapi
+uvicorn
+websockets
