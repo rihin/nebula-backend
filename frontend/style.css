@@ -83,6 +83,14 @@ button {
   font-weight: bold;
 }
 
+#password-rule {
+  font-size: 12px;
+  color: #b3b3ff;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+
 /* Messages */
 #messages {
   flex: 1;
