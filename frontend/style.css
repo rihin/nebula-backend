@@ -130,3 +130,47 @@ button {
   border: none;
   color: white;
 }
+
+#logoutBtn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  background: crimson;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+
+.chat-input {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #0e1025;
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}
+
+.chat-input button {
+  padding: 14px 20px;
+  font-size: 16px;
+  background: #6c63ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}

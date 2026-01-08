@@ -8,60 +8,49 @@ const SERVER = "https://nebula-backend-6co0.onrender.com";
    REGISTER
 ===================== */
 async function register() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const error = document.getElementById("error");
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
-  if (!username || !password) {
-    error.innerText = "Username and password required";
-    return;
-  }
-
-  const res = await fetch(`${SERVER}/auth/register`, {
+  const res = await fetch("https://nebula-backend-6co0.onrender.com/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   });
 
+  const data = await res.json();
+
   if (!res.ok) {
-    error.innerText = "Registration failed";
+    alert(data.detail);
     return;
   }
 
-  error.innerText = "Registered. Now login.";
+  alert("Registration successful. Please login.");
 }
-
 /* =====================
    LOGIN
 ===================== */
 async function login() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const room = document.getElementById("room").value.trim();
-  const error = document.getElementById("error");
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
-  if (!username || !password || !room) {
-    error.innerText = "Username, password and room required";
-    return;
-  }
-
-  const res = await fetch(`${SERVER}/auth/login`, {
+  const res = await fetch("https://nebula-backend-6co0.onrender.com/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   });
 
   if (!res.ok) {
-    error.innerText = "Login failed";
+    alert("Invalid credentials");
     return;
   }
 
   const data = await res.json();
-  token = data.token;
-  roomName = room;
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("username", data.username);
 
-  connectWebSocket();
+  connectWS();
 }
+
 
 /* =====================
    WEBSOCKET
@@ -110,6 +99,12 @@ function sendMessage() {
   socket.send(text);
   input.value = "";
 }
+function logout() {
+  if (ws) ws.close();
+  localStorage.clear();
+  location.reload();
+}
+
 
 document.addEventListener("keydown", e => {
   if (e.key === "Enter") sendMessage();

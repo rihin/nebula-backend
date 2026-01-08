@@ -30,15 +30,16 @@
 
   <div id="chat" hidden>
     <h3 id="room-title"></h3>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
     <div id="presence">
       <strong>Online</strong>
       <ul id="users"></ul>
     </div>
     <div id="messages"></div>
-    <div id="input-bar">
-      <input id="message" placeholder="Type a message..." />
-      <button id="send-btn" onclick="sendMessage()">Send</button>
-    </div>
+    <div class="chat-input">
+      <input id="messageInput" placeholder="Type a message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>>
   </div>
 
   <script src="app.js"></script>
