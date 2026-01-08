@@ -1,21 +1,12 @@
-from fastapi import APIRouter, HTTPException
-from sqlalchemy.orm import Session
-)
-from app.auth.jwt import create_token
-from app.auth.schemas import (
-    RegisterRequest,
-    LoginRequest,
-    LoginResponse
-)
-
-
+from fastapi import APIRouter, HTTPException, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import re
-from fastapi import APIRouter, HTTPException
-from sqlalchemy.orm import Session
-from app.database import SessionLocal
+
+from app.database import get_db
 from app.models import User
-from app.auth.security import hash_password, verify_password
-from app.auth.jwt import create_token
+from app.auth.security import hash_password, verify_password, create_access_token
+from app.auth.schemas import RegisterRequest, LoginRequest, LoginResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -23,48 +14,65 @@ PASSWORD_REGEX = re.compile(
     r"^[A-Z][A-Za-z0-9]*[@#$!][0-9]+$"
 )
 
-@router.post("/register")
-def register(username: str, password: str):
-    if not PASSWORD_REGEX.match(password):
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register(
+    data: RegisterRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    if not PASSWORD_REGEX.fullmatch(data.password):
         raise HTTPException(
             status_code=400,
-            detail="Password must start with capital letter, include special character, and end with numbers (e.g. Asdfghjkl@11)"
+            detail=(
+                "Password must start with a capital letter, "
+                "contain one special character (@#$!), "
+                "and end with numbers. Example: Zxcvbnm@11"
+            ),
         )
 
-    db: Session = SessionLocal()
-
-    if db.query(User).filter(User.username == username).first():
-        db.close()
-        raise HTTPException(status_code=400, detail="Username already exists")
+    result = await db.execute(
+        select(User).where(User.username == data.username)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="Username already exists",
+        )
 
     user = User(
-        username=username,
-        password_hash=hash_password(password)
+        username=data.username,
+        hashed_password=hash_password(data.password),
     )
 
     db.add(user)
-    db.commit()
-    db.refresh(user)
-    db.close()
+    await db.commit()
 
-    return {"message": "User created"}
+    return {"message": "User created successfully"}
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(data: LoginRequest):
-    db: Session = SessionLocal()
-    user = db.query(User).filter(User.username == data.username).first()
-    db.close()
+async def login(
+    data: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(User).where(User.username == data.username)
+    )
+    user = result.scalar_one_or_none()
 
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user or not verify_password(
+        data.password,
+        user.hashed_password,
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+        )
 
-    hashed_password: str = str(user.password_hash)
+    access_token = create_access_token(
+        {"sub": user.username}
+    )
 
-    if not verify_password(data.password, hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    username_str: str = str(user.username)
-    token = create_token(username_str)
-
-    return LoginResponse(token=token, username=username_str)
+    return LoginResponse(
+        access_token=access_token,
+        username=user.username,
+    )

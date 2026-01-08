@@ -9,5 +9,5 @@ class LoginRequest(BaseModel):
     password: str
 
 class LoginResponse(BaseModel):
-    token: str
+    access_token: str
     username: str

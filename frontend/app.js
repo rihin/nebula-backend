@@ -50,7 +50,8 @@ async function login() {
   }
 
   const data = await res.json();
-  localStorage.setItem("token", data.token);
+  localStorage.setItem("access", data.access_token);
+  localStorage.setItem("refresh", data.refresh_token);
 
   // Switch UI
   document.getElementById("login").hidden = true;
@@ -112,6 +113,26 @@ function addMessage(text) {
   div.innerText = text;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
+}
+
+async function refreshAccessToken() {
+  const refresh = localStorage.getItem("refresh");
+  if (!refresh) return false;
+
+  const res = await fetch(`${API}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refresh })
+  });
+
+  if (!res.ok) {
+    logout();
+    return false;
+  }
+
+  const data = await res.json();
+  localStorage.setItem("access", data.access_token);
+  return true;
 }
 function logout() {
   console.log("Logout clicked");

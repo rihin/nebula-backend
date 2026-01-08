@@ -1,20 +1,10 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
 from app.auth.routes import router as auth_router
-from app.websocket import router as ws_router
-from app.websocket import chat_router
 
-app = FastAPI()
+app = FastAPI(title="Nebula API 🚀")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.include_router(auth_router, prefix="/auth")
 
-app.include_router(auth_router)
-app.include_router(ws_router)
-
-app.include_router(chat_router)
+@app.get("/")
+async def root():
+    return {"status": "API is live 🚀"}

@@ -1,17 +1,31 @@
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
-SECRET_KEY = "CHANGE_THIS_SECRET"
+SECRET_KEY = "CHANGE_ME"
 ALGORITHM = "HS256"
-EXPIRY_MINUTES = 60 * 24
 
-def create_token(username: str) -> str:
+def create_access_token(username: str) -> str:
     payload = {
         "sub": username,
-        "exp": datetime.utcnow() + timedelta(minutes=EXPIRY_MINUTES)
+        "type": "access",
+        "exp": datetime.utcnow() + timedelta(minutes=15),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-def verify_token(token: str) -> str:
+
+def create_refresh_token(username: str) -> str:
+    payload = {
+        "sub": username,
+        "type": "refresh",
+        "exp": datetime.utcnow() + timedelta(days=7),
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_token(token: str, expected_type: str = "access") -> str:
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    return payload.get("sub")
+
+    if payload.get("type") != expected_type:
+        raise JWTError("Invalid token type")
+
+    return payload["sub"]

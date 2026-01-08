@@ -2,11 +2,35 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.auth.jwt import verify_token
 from app.database import SessionLocal
 from app.history.service import save_message, get_recent_messages
+import asyncio
 
 chat_router = APIRouter()
 
 # room -> { username -> WebSocket }
 rooms: dict[str, dict[str, WebSocket]] = {}
+
+from fastapi import WebSocket, WebSocketDisconnect, Depends
+from jose import jwt, JWTError
+from app.auth.security import SECRET_KEY, ALGORITHM
+
+async def get_user_from_ws(websocket: WebSocket):
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=1008)
+        return None
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except JWTError:
+        await websocket.close(code=1008)
+        return None
+
+
+async def heartbeat(ws: WebSocket):
+    while True:
+        await asyncio.sleep(25)
+        await ws.send_text("__PING__")
 
 
 def get_users(room: str):
@@ -23,7 +47,7 @@ async def chat(ws: WebSocket, room: str):
 
     # 🔐 SAFE TOKEN VERIFICATION (CRITICAL FIX)
     try:
-        username = verify_token(token)
+        username = verify_token(token, "access")
     except Exception:
         await ws.close(code=1008)
         return
