@@ -1,111 +1,74 @@
-let socket = null;
-let token = null;
-let roomName = "";
+const API = "https://nebula-backend-6co0.onrender.com";
+let ws = null;
 
-const SERVER = "https://nebula-backend-6co0.onrender.com";
-
-/* =====================
-   REGISTER
-===================== */
 async function register() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  const username = usernameInput.value;
+  const password = passwordInput.value;
 
-  const res = await fetch("https://nebula-backend-6co0.onrender.com/auth/register", {
+  const res = await fetch(`${API}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   });
 
   const data = await res.json();
-
   if (!res.ok) {
-    alert(data.detail);
+    error.innerText = data.detail;
     return;
   }
 
   alert("Registration successful. Please login.");
 }
-/* =====================
-   LOGIN
-===================== */
-async function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
 
-  const res = await fetch("https://nebula-backend-6co0.onrender.com/auth/login", {
+async function login() {
+  const username = usernameInput.value;
+  const password = passwordInput.value;
+  const room = roomInput.value;
+
+  const res = await fetch(`${API}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   });
 
   if (!res.ok) {
-    alert("Invalid credentials");
+    error.innerText = "Invalid credentials";
     return;
   }
 
   const data = await res.json();
   localStorage.setItem("token", data.token);
-  localStorage.setItem("username", data.username);
 
-  connectWS();
-}
-
-
-/* =====================
-   WEBSOCKET
-===================== */
-function connectWebSocket() {
   document.getElementById("login").hidden = true;
   document.getElementById("chat").hidden = false;
-  document.getElementById("room-title").innerText = `Room: ${roomName}`;
+  document.getElementById("room-title").innerText = `Room: ${room}`;
 
-  const wsUrl = SERVER.startsWith("https")
-    ? SERVER.replace("https", "wss")
-    : SERVER.replace("http", "ws");
+  connectWS(room);
+}
 
-  socket = new WebSocket(`${wsUrl}/ws/${roomName}?token=${token}`);
+function connectWS(room) {
+  const token = localStorage.getItem("token");
+  ws = new WebSocket(
+    `wss://nebula-backend-6co0.onrender.com/ws/${room}?token=${token}`
+  );
 
-  socket.onmessage = (event) => {
-    const data = event.data;
-
-    if (data.startsWith("__PRESENCE__:")) {
-      const users = data.replace("__PRESENCE__:", "").split(",");
-      const list = document.getElementById("users");
-      list.innerHTML = "";
-
-      users.filter(Boolean).forEach(u => {
-        const li = document.createElement("li");
-        li.innerText = u;
-        list.appendChild(li);
-      });
-      return;
-    }
-
-    const messages = document.getElementById("messages");
-    messages.innerHTML += `<div>${data}</div>`;
+  ws.onmessage = (e) => {
+    const div = document.createElement("div");
+    div.innerText = e.data;
+    messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
   };
 }
 
-/* =====================
-   SEND MESSAGE
-===================== */
 function sendMessage() {
-  const input = document.getElementById("message");
-  const text = input.value.trim();
-  if (!text || !socket) return;
-
-  socket.send(text);
-  input.value = "";
+  const msg = messageInput.value.trim();
+  if (!msg) return;
+  ws.send(msg);
+  messageInput.value = "";
 }
+
 function logout() {
   if (ws) ws.close();
   localStorage.clear();
   location.reload();
 }
-
-
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendMessage();
-});

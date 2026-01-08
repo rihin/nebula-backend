@@ -2,46 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Nebula Chat 🌌</title>
-
-  <!-- 🔥 Mobile viewport fix -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nebula Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <div id="login">
-    <h2>🌌 Nebula Chat</h2>
-    <input id="username" placeholder="Username" />
-    <input id="password" type="password" placeholder="Password" />
-    <p id="password-rule">
-      Password must:
-      <br>• Start with a capital letter
-      <br>• Contain a special character
-      <br>• End with a number
-      <br>• Be at least 8 characters
-    </p>
-    <input id="room" placeholder="Room (general / tech / random)" />
-    <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
-    <p id="error"></p>
-  </div>
+<div id="login">
+  <h2>Nebula Chat 🌌</h2>
 
-  <div id="chat" hidden>
-    <h3 id="room-title"></h3>
-    <button id="logoutBtn" onclick="logout()">Logout</button>
-    <div id="presence">
-      <strong>Online</strong>
-      <ul id="users"></ul>
-    </div>
-    <div id="messages"></div>
-    <div class="chat-input">
-      <input id="messageInput" placeholder="Type a message..." />
-      <button onclick="sendMessage()">Send</button>
-    </div>>
-  </div>
+  <input id="username" placeholder="Username" />
+  <input id="password" type="password" placeholder="Password" />
+  <input id="room" placeholder="Room (general / tech / random)" />
 
-  <script src="app.js"></script>
+  <p class="password-rule">
+    Password must:
+    <br>• Start with a capital letter
+    <br>• Contain a special character
+    <br>• End with a number
+    <br>• Be at least 8 characters
+  </p>
+
+  <button onclick="login()">Login</button>
+  <button onclick="register()">Register</button>
+
+  <p id="error"></p>
+</div>
+
+<div id="chat" hidden>
+  <button id="logoutBtn" onclick="logout()">Logout</button>
+
+  <h3 id="room-title"></h3>
+
+  <div id="messages"></div>
+
+  <div class="chat-input">
+    <input id="messageInput" placeholder="Type message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>

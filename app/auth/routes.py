@@ -3,12 +3,19 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import User
-from app.auth.security import validate_password, hash_password, verify_password
+from app.auth.security import (
+    hash_password,
+    verify_password,
+    validate_password
+)
 from app.auth.jwt import create_token
-from app.auth.schemas import RegisterRequest, LoginRequest, LoginResponse
+from app.auth.schemas import (
+    RegisterRequest,
+    LoginRequest,
+    LoginResponse
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
 
 @router.post("/register")
 def register(data: RegisterRequest):
@@ -18,7 +25,6 @@ def register(data: RegisterRequest):
         db.close()
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    # 🔐 PASSWORD VALIDATION
     validate_password(data.password)
 
     user = User(
@@ -31,9 +37,7 @@ def register(data: RegisterRequest):
     db.refresh(user)
     db.close()
 
-    return {"message": "User created"}
-
-
+    return {"message": "User registered successfully"}
 
 @router.post("/login", response_model=LoginResponse)
 def login(data: LoginRequest):
@@ -52,7 +56,4 @@ def login(data: LoginRequest):
     username_str: str = str(user.username)
     token = create_token(username_str)
 
-    return LoginResponse(
-        token=token,
-        username=username_str
-    )
+    return LoginResponse(token=token, username=username_str)

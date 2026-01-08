@@ -1,15 +1,10 @@
 import re
+from passlib.context import CryptContext
 from fastapi import HTTPException
 
-def validate_password(password: str) -> None:
-    """
-    Rules:
-    - Starts with capital letter
-    - Contains at least one special character
-    - Ends with a number
-    - Minimum 8 characters
-    """
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+def validate_password(password: str) -> None:
     pattern = r"^[A-Z].*[!@#$%^&*(),.?\":{}|<>].*\d+$"
 
     if len(password) < 8:
@@ -27,3 +22,9 @@ def validate_password(password: str) -> None:
                 "and end with a number"
             )
         )
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(password: str, hashed: str) -> bool:
+    return pwd_context.verify(password, hashed)
