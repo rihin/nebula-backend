@@ -1,12 +1,5 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
-
-from app.database import SessionLocal
-from app.models import User
-from app.auth.security import (
-    hash_password,
-    verify_password,
-    validate_password
 )
 from app.auth.jwt import create_token
 from app.auth.schemas import (
@@ -15,21 +8,38 @@ from app.auth.schemas import (
     LoginResponse
 )
 
+
+import re
+from fastapi import APIRouter, HTTPException
+from sqlalchemy.orm import Session
+from app.database import SessionLocal
+from app.models import User
+from app.auth.security import hash_password, verify_password
+from app.auth.jwt import create_token
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+PASSWORD_REGEX = re.compile(
+    r"^[A-Z][A-Za-z0-9]*[@#$!][0-9]+$"
+)
+
 @router.post("/register")
-def register(data: RegisterRequest):
+def register(username: str, password: str):
+    if not PASSWORD_REGEX.match(password):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must start with capital letter, include special character, and end with numbers (e.g. Asdfghjkl@11)"
+        )
+
     db: Session = SessionLocal()
 
-    if db.query(User).filter(User.username == data.username).first():
+    if db.query(User).filter(User.username == username).first():
         db.close()
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    validate_password(data.password)
-
     user = User(
-        username=data.username,
-        password_hash=hash_password(data.password)
+        username=username,
+        password_hash=hash_password(password)
     )
 
     db.add(user)
@@ -37,7 +47,8 @@ def register(data: RegisterRequest):
     db.refresh(user)
     db.close()
 
-    return {"message": "User registered successfully"}
+    return {"message": "User created"}
+
 
 @router.post("/login", response_model=LoginResponse)
 def login(data: LoginRequest):

@@ -1,30 +1,25 @@
-import re
 from passlib.context import CryptContext
-from fastapi import HTTPException
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def validate_password(password: str) -> None:
-    pattern = r"^[A-Z].*[!@#$%^&*(),.?\":{}|<>].*\d+$"
-
-    if len(password) < 8:
-        raise HTTPException(
-            status_code=400,
-            detail="Password must be at least 8 characters long"
-        )
-
-    if not re.match(pattern, password):
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Password must start with a capital letter, "
-                "contain a special character, "
-                "and end with a number"
-            )
-        )
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(password, hashed)
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+def is_password_strong(password: str) -> bool:
+    """Check if the password meets strength requirements."""
+    if len(password) < 8:
+        return False
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_special = any(not c.isalnum() for c in password)
+    return has_upper and has_lower and has_digit and has_special
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12
+)

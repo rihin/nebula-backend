@@ -92,14 +92,15 @@ button {
 }
 
 #logoutBtn {
+  width: 15%;
   position: fixed;
   top: 10px;
   right: 10px;
-  z-index: 1000;
+  z-index: 100;
   background: crimson;
   border: none;
   color: white;
-  padding: 10px 16px;
+  padding: 10px 10px;
   border-radius: 6px;
   cursor: pointer;
 }
