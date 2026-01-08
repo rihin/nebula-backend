@@ -3,41 +3,52 @@ from app.auth.jwt import verify_token
 from app.database import SessionLocal
 from app.history.service import save_message, get_recent_messages
 
+chat_router = APIRouter()
+
+# room -> { username -> WebSocket }
+rooms: dict[str, dict[str, WebSocket]] = {}
+
+
 def get_users(room: str):
     return list(rooms.get(room, {}).keys())
 
-chat_router = APIRouter()
-rooms: dict[str, dict[str, WebSocket]] = {}
 
 @chat_router.websocket("/ws/{room}")
 async def chat(ws: WebSocket, room: str):
     token = ws.query_params.get("token")
-    username = verify_token(token) if token else None
+
+    if not token:
+        await ws.close(code=1008)
+        return
+
+    # 🔐 SAFE TOKEN VERIFICATION (CRITICAL FIX)
+    try:
+        username = verify_token(token)
+    except Exception:
+        await ws.close(code=1008)
+        return
 
     if not username:
         await ws.close(code=1008)
         return
 
+    # Init room
     if room not in rooms:
         rooms[room] = {}
 
     await ws.accept()
     rooms[room][username] = ws
 
-    # 🔥 SEND UPDATED USER LIST
+    # 🔥 SEND PRESENCE UPDATE (JOIN)
     users = get_users(room)
     for client in rooms[room].values():
-        await client.send_text(
-            f"__PRESENCE__:{','.join(users)}"
-        )
+        await client.send_text(f"__PRESENCE__:{','.join(users)}")
 
-    # 📜 send history (already present)
+    # 📜 SEND MESSAGE HISTORY
     db = SessionLocal()
     history = get_recent_messages(db, room)
     for msg in history:
-        await ws.send_text(
-            f"[{room}] {msg.username}: {msg.content}"
-        )
+        await ws.send_text(f"[{room}] {msg.username}: {msg.content}")
 
     try:
         while True:
@@ -46,23 +57,19 @@ async def chat(ws: WebSocket, room: str):
             save_message(db, room, username, message)
 
             for client in rooms[room].values():
-                if client != ws:
-                    await client.send_text(
-                        f"[{room}] {username}: {message}"
-                    )
+                await client.send_text(f"[{room}] {username}: {message}")
 
     except WebSocketDisconnect:
+        # 🚪 REMOVE USER
         rooms[room].pop(username, None)
 
-        # 🔥 UPDATE PRESENCE ON LEAVE
+        # 🔥 PRESENCE UPDATE (LEAVE)
         users = get_users(room)
-        for client in rooms[room].values():
-            await client.send_text(
-                f"__PRESENCE__:{','.join(users)}"
-            )
+        for client in rooms.get(room, {}).values():
+            await client.send_text(f"__PRESENCE__:{','.join(users)}")
 
-        if not rooms[room]:
-            rooms.pop(room)
+        if not rooms.get(room):
+            rooms.pop(room, None)
 
     finally:
         db.close()

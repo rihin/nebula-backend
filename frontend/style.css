@@ -63,26 +63,43 @@ button {
   width: 100%;
   background: #161a33;
   display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px;
+  box-sizing: border-box;
 }
 
 .chat-input input {
   flex: 1;
-  padding: 14px;
+  height: 44px;
+  padding: 0 12px;
   font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
 }
 
 .chat-input button {
-  margin-left: 10px;
-  padding: 14px 20px;
+  width: auto;
+  height: 44px;
+  padding: 0 24px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background: #6c63ff;
+  color: white;
+  cursor: pointer;
 }
 
 #logoutBtn {
   position: fixed;
   top: 10px;
   right: 10px;
+  z-index: 1000;
   background: crimson;
   border: none;
   color: white;
-  padding: 8px 12px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
 }
